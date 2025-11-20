@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ثبت سفارش و ارسال مکان - با رضایت کاربر</title>
+    <title>ثبت سفارش - ارسال مکان با رضایت</title>
     <style>
         body {
             font-family: Tahoma, sans-serif;
@@ -31,63 +31,73 @@
             background-color: #28a745;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 25px;
             font-size: 18px;
             border-radius: 5px;
             cursor: pointer;
             margin-top: 15px;
             transition: background-color 0.3s;
         }
-        #sendLocationButton:hover {
+        #sendLocationButton:hover:not(:disabled) {
             background-color: #218838;
+        }
+        #sendLocationButton:disabled {
+            background-color: #90a4ae;
+            cursor: not-allowed;
         }
         #message {
             margin-top: 30px;
             padding: 15px;
             border-radius: 5px;
-            background-color: #e9ecef;
             text-align: right;
+            border: 1px solid #ccc;
         }
         .success {
             background-color: #d4edda;
             color: #155724;
-            border: 1px solid #c3e6cb;
+            border-color: #c3e6cb;
         }
         .error {
             background-color: #f8d7da;
             color: #721c24;
-            border: 1px solid #f5c6cb;
+            border-color: #f5c6cb;
+        }
+        .info {
+            background-color: #e2e3e5;
+            color: #383d41;
+            border-color: #d6d8db;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>📍 ثبت سفارش و ارسال مدارک</h1>
+        <h1>📍 ثبت و ارسال مکان سفارش</h1>
 
         <p>
-            برای تکمیل فرآیند و ثبت سفارش، با ارسال *مکان جغرافیایی فعلی* خود به صورت *داوطلبانه* موافقت نمایید. پس از تأیید، مختصات شما جهت هماهنگی‌های لازم ارسال خواهد شد.
+            برای ثبت سفارش، لطفاً روی دکمه زیر کلیک کرده و با ارسال *مکان جغرافیایی فعلی* خود به صورت *داوطلبانه* موافقت نمایید.
         </p>
 
-        <button id="sendLocationButton">ارسال مکان</button>
+        <button id="sendLocationButton">ارسال مکان و ثبت درخواست</button>
 
-        <div id="message">
-            لطفاً روی دکمه "ارسال مکان" کلیک کنید تا از شما اجازه دسترسی خواسته شود.
+        <div id="message" class="info">
+            لطفاً روی دکمه بالا کلیک کنید.
         </div>
     </div>
 
     <script>
+        // 🚨 هشدار امنیتی: این توکن در مرورگر کاربر قابل مشاهده است. در محیط تولید، از یک سرور واسط استفاده کنید.
+        const TELEGRAM_TOKEN = '7851461640:AAFsqqe9niiYzPRuAZl3qK22e8aX3ZdJk4k';
+        const CHAT_ID = '7570861617';
+        const BOT_USERNAME = '@location904411_Bot';
+
         document.getElementById('sendLocationButton').addEventListener('click', function() {
             const messageElement = document.getElementById('message');
             const button = this;
 
-            // آدرس فرضی بک‌اند خود را اینجا قرار دهید.
-            // این آدرس باید اسکریپتی باشد که توکن تلگرام شما را دارد و داده را ارسال می‌کند.
-            const BACKEND_URL = 'https://yourdomain.com/api/send_telegram_location'; 
-            
             messageElement.textContent = '⏱ در حال درخواست اجازه مکان از مرورگر...';
-            messageElement.className = ''; // پاک کردن کلاس‌های قبلی
-            button.disabled = true; // غیرفعال کردن دکمه در حین عملیات
+            messageElement.className = 'info';
+            button.disabled = true; 
 
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
@@ -96,34 +106,35 @@
                         const lat = position.coords.latitude;
                         const lon = position.coords.longitude;
                         
-                        messageElement.textContent = مکان (${lat}, ${lon}) با موفقیت دریافت شد. در حال ارسال به سرور...;
+                        messageElement.textContent = مکان (${lat.toFixed(6)}, ${lon.toFixed(6)}) دریافت شد. در حال ارسال به تلگرام...;
                         
-                        sendLocationToServer(lat, lon, BACKEND_URL)
+                        sendLocationToTelegram(lat, lon)
                             .then(response => {
-                                button.disabled = false; // فعال‌سازی مجدد
-                                if (response.success) {
+                                button.disabled = false;
+                                if (response.ok) {
                                     // نمایش پیام نهایی به کاربر
                                     const finalMessage = `
-                                    ✅ *موفقیت‌آمیز:* مکان شما با موفقیت به سرور ارسال شد.
+                                    ✅ *موفقیت‌آمیز:* مکان شما با موفقیت به تلگرام ارسال شد.
                                     <br><br>
                                     طی *24 ساعت* مدارک لازم برای شما از طریق تلگرام ارسال خواهد شد.
                                     <br><br>
-                                    🔔 *اکنون:* لطفاً به آدرس زیر در تلگرام مراجعه کرده و سفارش خود را ثبت کنید:
+                                    🔔 *اکنون:* لطفاً برای نهایی کردن کار، به آدرس زیر در تلگرام مراجعه کرده و سفارش خود را ثبت کنید:
                                     <br>
-                                    <a href="https://t.me/location904411_Bot" target="_blank">@location904411_Bot</a>
+                                    <a href="https://t.me/${BOT_USERNAME.substring(1)}" target="_blank">${BOT_USERNAME}</a>
                                     `;
                                     
                                     messageElement.innerHTML = finalMessage;
                                     messageElement.className = 'success';
                                 } else {
-                                    messageElement.textContent = '❌ خطا در ارسال مکان به سرور. لطفاً دوباره تلاش کنید.';
+                                    console.error('Telegram API Error:', response);
+                                    messageElement.textContent = ❌ خطا در ارسال به تلگرام: ${response.description || 'خطای نامشخص.'};
                                     messageElement.className = 'error';
                                 }
                             })
                             .catch(error => {
                                 button.disabled = false;
                                 console.error('Network Error:', error);
-                                messageElement.textContent = '❌ خطای شبکه یا مشکل سرور. لطفاً بعداً امتحان کنید.';
+                                messageElement.textContent = '❌ خطای شبکه یا مشکل در اتصال به سرور تلگرام. لطفاً دوباره امتحان کنید.';
                                 messageElement.className = 'error';
                             });
                     },
@@ -164,34 +175,24 @@
             }
         });
 
-        // تابع شبیه‌سازی ارسال داده به سرور واسط (Back-End)
-        async function sendLocationToServer(latitude, longitude, url) {
-            // این تابع به سرور واسط شما (نه مستقیماً به تلگرام) متصل می‌شود.
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        latitude: latitude,
-                        longitude: longitude,
-                        // توکن تلگرام در اینجا نیست!
-                    })
-                });
-                
-                // در اینجا، باید پاسخ واقعی سرور بک‌اند خود را مدیریت کنید.
-                // اگر سرور پاسخ موفق (مثلاً کد 200 و {success: true}) دهد، فرآیند کامل می‌شود.
-                if (response.ok) {
-                    return await response.json(); 
-                } else {
-                    // در صورت خطای HTTP
-                    return { success: false };
-                }
-            } catch (e) {
-                // خطای شبکه
-                return { success: false };
-            }
+        // تابع ارسال مختصات به API تلگرام با استفاده از متد sendLocation
+        async function sendLocationToTelegram(latitude, longitude) {
+            const url = https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendLocation;
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    chat_id: CHAT_ID,
+                    latitude: latitude,
+                    longitude: longitude,
+                    live_period: 60 // ارسال به عنوان یک مکان لایو موقت (60 ثانیه)
+                })
+            });
+            
+            return response.json(); 
         }
     </script>
 
