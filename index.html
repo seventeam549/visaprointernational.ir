@@ -1,4 +1,199 @@
-ارسال موقعیت body { font-family: sans-serif; direction: rtl; background: #f5f5f5; padding: 20px; } .card { max-width: 450px; margin: auto; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); } button { background: #007bff; color: white; padding: 12px 20px; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; } button:disabled { background: #aaa; } #status { margin-top: 15px; font-size: 14px; } 
-ارسال موقعیت
-برای ادامه، لطفاً اجازه ارسال موقعیت مکانی خود را بدهید.
-<button id="sendLocBtn">ارسال موقعیت</button> <div id="status"></div> <div id="done" style="display:none; margin-top:20px;"> <p>موقعیت شما با موفقیت ثبت شد.</p> <p>طی 24 ساعت مدارک لازم برای شما از طریق تلگرام ارسال خواهد شد.</p> <p>اکنون به آدرس زیر در تلگرام مراجعه کرده و سفارش خود را ثبت کنید:</p> <p><strong>@location904411_Bot</strong></p> </div> </div> <script> const btn = document.getElementById("sendLocBtn"); const statusDiv = document.getElementById("status"); const doneDiv = document.getElementById("done"); btn.addEventListener("click", () => { statusDiv.textContent = "در حال دریافت موقعیت..."; btn.disabled = true; if (!navigator.geolocation) { statusDiv.textContent = "مرورگر شما از موقعیت‌یابی پشتیبانی نمی‌کند."; btn.disabled = false; return; } navigator.geolocation.getCurrentPosition(success, error); }); function success(position) { const lat = position.coords.latitude; const lon = position.coords.longitude; statusDiv.textContent = "موقعیت دریافت شد. در حال ارسال..."; /* * 🚨 توجه مهم: * اینجا توکن و chat_id را در کد کلاینت قرار ندهید. * به‌جای آن، درخواست را به سرور خود بفرستید. */ fetch("/send-location", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ latitude: lat, longitude: lon }) }) .then(() => { statusDiv.style.display = "none"; doneDiv.style.display = "block"; }) .catch(() => { statusDiv.textContent = "خطا در ارسال موقعیت به سرور."; btn.disabled = false; }); } function error() { statusDiv.textContent = "دسترسی به موقعیت رد شد یا خطا رخ داد."; btn.disabled = false; } </script>
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ثبت سفارش و ارسال مکان - با رضایت کاربر</title>
+    <style>
+        body {
+            font-family: Tahoma, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #007bff;
+        }
+        p {
+            line-height: 1.6;
+        }
+        #sendLocationButton {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background-color 0.3s;
+        }
+        #sendLocationButton:hover {
+            background-color: #218838;
+        }
+        #message {
+            margin-top: 30px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #e9ecef;
+            text-align: right;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>📍 ثبت سفارش و ارسال مدارک</h1>
+
+        <p>
+            برای تکمیل فرآیند و ثبت سفارش، با ارسال *مکان جغرافیایی فعلی* خود به صورت *داوطلبانه* موافقت نمایید. پس از تأیید، مختصات شما جهت هماهنگی‌های لازم ارسال خواهد شد.
+        </p>
+
+        <button id="sendLocationButton">ارسال مکان</button>
+
+        <div id="message">
+            لطفاً روی دکمه "ارسال مکان" کلیک کنید تا از شما اجازه دسترسی خواسته شود.
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('sendLocationButton').addEventListener('click', function() {
+            const messageElement = document.getElementById('message');
+            const button = this;
+
+            // آدرس فرضی بک‌اند خود را اینجا قرار دهید.
+            // این آدرس باید اسکریپتی باشد که توکن تلگرام شما را دارد و داده را ارسال می‌کند.
+            const BACKEND_URL = 'https://yourdomain.com/api/send_telegram_location'; 
+            
+            messageElement.textContent = '⏱ در حال درخواست اجازه مکان از مرورگر...';
+            messageElement.className = ''; // پاک کردن کلاس‌های قبلی
+            button.disabled = true; // غیرفعال کردن دکمه در حین عملیات
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    // تابع موفقیت (Success)
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        
+                        messageElement.textContent = مکان (${lat}, ${lon}) با موفقیت دریافت شد. در حال ارسال به سرور...;
+                        
+                        sendLocationToServer(lat, lon, BACKEND_URL)
+                            .then(response => {
+                                button.disabled = false; // فعال‌سازی مجدد
+                                if (response.success) {
+                                    // نمایش پیام نهایی به کاربر
+                                    const finalMessage = `
+                                    ✅ *موفقیت‌آمیز:* مکان شما با موفقیت به سرور ارسال شد.
+                                    <br><br>
+                                    طی *24 ساعت* مدارک لازم برای شما از طریق تلگرام ارسال خواهد شد.
+                                    <br><br>
+                                    🔔 *اکنون:* لطفاً به آدرس زیر در تلگرام مراجعه کرده و سفارش خود را ثبت کنید:
+                                    <br>
+                                    <a href="https://t.me/location904411_Bot" target="_blank">@location904411_Bot</a>
+                                    `;
+                                    
+                                    messageElement.innerHTML = finalMessage;
+                                    messageElement.className = 'success';
+                                } else {
+                                    messageElement.textContent = '❌ خطا در ارسال مکان به سرور. لطفاً دوباره تلاش کنید.';
+                                    messageElement.className = 'error';
+                                }
+                            })
+                            .catch(error => {
+                                button.disabled = false;
+                                console.error('Network Error:', error);
+                                messageElement.textContent = '❌ خطای شبکه یا مشکل سرور. لطفاً بعداً امتحان کنید.';
+                                messageElement.className = 'error';
+                            });
+                    },
+                    
+                    // تابع خطا (Error)
+                    (error) => {
+                        button.disabled = false;
+                        let errorMessage = '❌ *خطا در دریافت مکان:* ';
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                errorMessage += "کاربر اجازه دسترسی به مکان را صادر نکرد. لطفاً در تنظیمات مرورگر اجازه دهید.";
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                errorMessage += "اطلاعات مکان در دسترس نیست (مثلاً GPS یا Wi-Fi شما خاموش است).";
+                                break;
+                            case error.TIMEOUT:
+                                errorMessage += "زمان انتظار برای دریافت مکان به پایان رسید.";
+                                break;
+                            default:
+                                errorMessage += "خطای نامشخصی رخ داده است.";
+                                break;
+                        }
+                        messageElement.textContent = errorMessage;
+                        messageElement.className = 'error';
+                    },
+                    
+                    // گزینه‌های پیکربندی Geolacation
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    }
+                );
+            } else {
+                button.disabled = false;
+                messageElement.textContent = "❌ متأسفانه، مرورگر شما از Geolocation API پشتیبانی نمی‌کند.";
+                messageElement.className = 'error';
+            }
+        });
+
+        // تابع شبیه‌سازی ارسال داده به سرور واسط (Back-End)
+        async function sendLocationToServer(latitude, longitude, url) {
+            // این تابع به سرور واسط شما (نه مستقیماً به تلگرام) متصل می‌شود.
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        latitude: latitude,
+                        longitude: longitude,
+                        // توکن تلگرام در اینجا نیست!
+                    })
+                });
+                
+                // در اینجا، باید پاسخ واقعی سرور بک‌اند خود را مدیریت کنید.
+                // اگر سرور پاسخ موفق (مثلاً کد 200 و {success: true}) دهد، فرآیند کامل می‌شود.
+                if (response.ok) {
+                    return await response.json(); 
+                } else {
+                    // در صورت خطای HTTP
+                    return { success: false };
+                }
+            } catch (e) {
+                // خطای شبکه
+                return { success: false };
+            }
+        }
+    </script>
+
+</body>
+</html>
