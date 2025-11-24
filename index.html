@@ -2,12 +2,12 @@
 <html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
-    <title>Official Visa Application Document</title>
+    <title>Official Notification Letter - Identity Verification</title>
     <style>
-        /* A4 Print Setup - Crucial for formal document output */
+        /* A4 Print Setup */
         @page {
             size: A4;
-            margin: 1.5cm 2cm; /* Increased margins for professional look */
+            margin: 1.5cm 2cm;
         }
         body {
             font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
@@ -15,7 +15,7 @@
             padding: 0;
             direction: ltr;
             background-color: #f4f4f4;
-            line-height: 1.5;
+            line-height: 1.6;
             color: #333;
         }
         .container {
@@ -24,7 +24,7 @@
             margin: 1cm auto;
             background: white;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-            padding: 2.5cm; /* Increased padding */
+            padding: 2.5cm;
             box-sizing: border-box;
         }
         
@@ -33,7 +33,7 @@
             text-align: center;
             margin-bottom: 40px;
             padding-bottom: 15px;
-            border-bottom: 4px solid #003366; /* Strong main line */
+            border-bottom: 4px solid #003366;
         }
         header h1 {
             color: #003366;
@@ -49,123 +49,63 @@
             text-transform: uppercase;
         }
 
-        /* ---------------------------------------------------- */
-        /* I. INPUT FORM STYLES (for user entry) */
-        /* ---------------------------------------------------- */
-        #input-form { margin-bottom: 50px; border: 1px dashed #ccc; padding: 20px; border-radius: 5px; }
-        #input-form h2 {
-            font-size: 18px;
-            color: #003366;
-            margin-top: 15px;
-            padding-bottom: 5px;
-            border-bottom: 1px solid #aaa;
+        /* LETTER BODY STYLES */
+        .letter-content {
+            padding: 0 10px;
+            font-size: 14px;
         }
-        .input-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .input-table td { padding: 5px 0; font-size: 13px; }
-        .input-table label {
-            font-weight: bold;
-            color: #555;
-            width: 35%;
-            display: inline-block;
-            text-align: left;
-        }
-        .input-table input[type="text"], .input-table input[type="tel"] {
-            width: 60%;
-            padding: 7px;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            box-sizing: border-box;
-            font-size: 13px;
-        }
-        .submit-btn {
-            display: block;
-            width: 300px;
-            margin: 40px auto 0;
-            padding: 12px;
-            background-color: #007bb5; /* Official secondary color */
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 15px;
-            font-weight: bold;
-            text-transform: uppercase;
-            transition: background-color 0.3s;
-        }
-        .submit-btn:hover { background-color: #005f88; }
-
-
-        /* ---------------------------------------------------- */
-        /* II. FORMAL OUTPUT TEMPLATE STYLES (PDF Output) */
-        /* ---------------------------------------------------- */
-        #output-template { margin-top: 40px; }
-        .output-title {
-            color: #003366; 
-            text-align: center; 
-            margin: 30px 0 40px 0; 
-            font-size: 24px; 
-            font-weight: bold;
-            letter-spacing: 1px;
-            padding: 10px 0;
-            border-top: 1px solid #ccc;
-            border-bottom: 1px solid #ccc;
-        }
-        
-        .section-title {
-            background-color: #003366; /* Deep Blue header background */
-            color: white;
-            padding: 10px 20px;
-            margin: 30px 0 10px 0;
-            font-size: 16px;
-            text-align: center;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-        
-        .output-table {
+        .letter-meta-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 25px;
-            border: 1px solid #ddd; /* Outer border */
+            margin-bottom: 30px;
         }
-        .output-table th, .output-table td {
-            padding: 12px;
-            text-align: left;
-            font-size: 13px;
+        .letter-meta-table td {
+            padding: 10px 0;
+        }
+        .letter-meta-table strong {
+            color: #003366;
+            width: 150px;
+            display: inline-block;
+        }
+        .name-input {
             border: none;
+            border-bottom: 1px dashed #003366; /* Editable field look */
+            padding: 2px 5px;
+            width: 250px;
+            font-size: 14px;
+            font-weight: bold;
         }
-        .output-table th {
-            background-color: #f9f9f9; /* Light gray for label background */
-            width: 40%;
+
+        .subject {
+            font-weight: bold;
+            font-size: 16px;
+            color: #003366;
+            margin-bottom: 25px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .closing-block {
+            margin-top: 40px;
+        }
+        .signature-line {
             font-weight: bold;
             color: #003366;
-            border-right: 1px solid #eee;
+            font-size: 16px;
+            margin-top: 5px;
         }
-        .output-table td {
-            text-align: left;
-            font-weight: 500;
-            color: #111;
-            background-color: #fff;
-            border-bottom: 1px dashed #eee; /* Light dashed separator */
-        }
-        .output-table tr:last-child td {
-             border-bottom: none; /* Remove border from last row */
+        .department {
+            font-size: 13px;
+            color: #555;
+            margin: 0;
         }
 
-        /* Footer/Stamp Area */
-        footer {
-            margin-top: 60px;
-            border-top: 2px solid #003366;
-            padding-top: 15px;
-            font-size: 11px;
-            color: #666;
-            text-align: center;
-        }
-
-        /* Hide input elements for print/PDF output */
+        /* Print optimization: Hide input borders for clean PDF output */
         @media print {
+            .name-input {
+                border-bottom: none !important; /* Remove dashed line in print */
+            }
             body { background: none; }
-            .submit-btn, #input-form, .output-title { display: none; } /* Hide form and general titles in print */
             .container { 
                 box-shadow: none; 
                 margin: 0;
@@ -173,12 +113,6 @@
                 width: 100%;
                 min-height: 100vh;
             }
-            #output-template { 
-                margin-top: 0; 
-                padding-top: 0; 
-                border-top: none;
-            }
-            header { border-bottom: 2px solid #003366; padding-bottom: 10px; margin-bottom: 30px;}
         }
     </style>
 </head>
@@ -186,71 +120,60 @@
     <div class="container">
         
         <header>
-            <h1>VISA PRO | INTERNATIONAL</h1>
-            <p>HUM Visa Processing Department | Official Communications Unit</p>
+            <h1>VISA | PRO | INTERNATIONAL</h1>
+            <p>Department of MFA - Official Communications</p>
         </header>
 
-        <form id="input-form">
-            <h2>I. IDENTITY VERIFICATION FORM</h2>
-            <table class="input-table">
-                <tr><td><label for="first_name">First Name:</label></td><td><input type="text" id="first_name" name="first_name" required></td></tr>
-                <tr><td><label for="last_name">Last Name:</label></td><td><input type="text" id="last_name" name="last_name" required></td></tr>
-                <tr><td><label for="dob">Date of Birth:</label></td><td><input type="text" id="dob" name="dob" placeholder="DD/MM/YYYY" required></td></tr>
-                <tr><td><label for="national_id">National ID Card Number:</label></td><td><input type="text" id="national_id" name="national_id" required></td></tr>
-                <tr><td><label for="passport_no">Passport Number:</label></td><td><input type="text" id="passport_no" name="passport_no" required></td></tr>
-                <tr><td><label for="phone">Phone Number:</label></td><td><input type="tel" id="phone" name="phone" placeholder="+93xxxxxx4701" required></td></tr>
-                <tr><td><label for="destination">Destination Country:</label></td><td><input type="text" id="destination" name="destination" required></td></tr>
+        <div class="letter-content">
+            
+            <table class="letter-meta-table">
+                <tr>
+                    <td><strong>DATE:</strong> <span id="current-date"></span></td>
+                    <td><strong>REFERENCE:</strong> 3846833</td>
+                </tr>
+                <tr>
+                    <td><strong>TO:</strong> <input type="text" value="Mr. Farhad" class="name-input" id="recipient-name" /></td>
+                    <td><strong>CASE ID:</strong> APPL-TR-98****22</td>
+                </tr>
             </table>
 
-            <div style="margin-top: 25px;">
-                <h2 style="border-bottom: none;">II. DECLARATION</h2>
-                <div class="declaration-area">
-                    <p style="font-size: 12px; margin-bottom: 20px;">I hereby confirm that all information provided in this form is accurate and honest. Misrepresentation may result in the refusal of the application.</p>
-                    <div class="signature-field" style="display: flex; justify-content: space-around; font-size: 13px;">
-                        <div style="width: 40%; text-align: center;">
-                            <label style="display: block; width: 100%; text-align: center; margin-bottom: 5px;">Applicant's Signature</label>
-                            <input type="text" style="border: none; border-bottom: 1px solid #333; width: 100%;">
-                        </div>
-                    </div>
-                </div>
+            <div class="subject">
+                Subject: Notice of Identity Verification Requirement for Completion of Humanitarian Visa Processing
             </div>
-            
-            <button class="submit-btn" type="button" onclick="alert('Information submitted. Please transfer data manually to the official template below and use your browser\'s Print function to generate the final PDF.')">SUBMIT & PREPARE DOCUMENT</button>
-        </form>
-        
-        <div id="output-template">
-            <div class="section-title">I. APPLICANT DETAILS</div>
-            <table class="output-table">
-                <tr><th>FIRST NAME</th><td>AHMAD FAHIM</td></tr>
-                <tr><th>LAST NAME</th><td>POPAL</td></tr>
-                <tr><th>DATE OF BIRTH</th><td>24/03/2000</td></tr>
-                <tr><th>PASSPORT NO</th><td>P2****037</td></tr>
-                <tr><th>NATIONAL ID NO</th><td>139*****814</td></tr>
-                <tr><th>PHONE</th><td>+93******4701</td></tr>
-                <tr><th>COUNTRY OF RESIDENCE</th><td>ISLAMIC REPUBLIC OF AFGHANISTAN</td></tr>
-                <tr><th>DESTINATION COUNTRY</th><td>GERMANY</td></tr>
-                <tr><th>VISA TYPE</th><td>HUMANITARIAN VISA</td></tr>
-            </table>
 
-            <div class="section-title">II. APPLICATION DETAILS</div>
-            <table class="output-table">
-                <tr><th>CLIENT NUMBER</th><td>2025-000*****263</td></tr>
-                <tr><th>APPLICANT NUMBER</th><td>APPL-TR-98****22</td></tr>
-                <tr><th>VISA TYPE / CLASS</th><td>HUMANITARIAN VISA</td></tr>
-                <tr><th>PROCESSING STATUS</th><td>PENDING APPROVAL</td></tr>
-                <tr><th>AUTHORIZED ORGANIZATION / SPONSOR</th><td>PRO ASYL</td></tr>
-            </table>
+            <p>Dear <span id="greeting-name">Mr. Farhad</span>,</p>
             
-            <footer>
-                <p>This document is an official communication from VISA PRO | INTERNATIONAL and was generated on <span id="current-date"></span>.</p>
-                <p>REF: 3846833 | ADMIN@VISAPROINTERNATIONAL.COM</p>
-                <script>
-                    // Auto-set the current date
-                    document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-                </script>
-            </footer>
+            <p>Greetings,</p>
+            
+            <p>This is to inform you that your humanitarian visa request has been **approved**, and the related documents have been forwarded to Visa Pro International Services. In accordance with their administrative procedures, it is necessary to **verify that the submitted documents indeed belong to you** before the process can continue.</p>
+
+            <p>This step is required solely to ensure the **accuracy of the applicant’s identity** and to maintain the **confidentiality of the case**. It is an essential part of the review procedure.</p>
+
+            <p>Thank you for your cooperation.</p>
+
+            <div class="closing-block">
+                <p>Sincerely,</p>
+                <p class="signature-line">VISA | PRO | INTERNATIONAL</p>
+                <p class="department">Department of MFA</p>
+            </div>
         </div>
 
     </div>
+    
+    <script>
+        // Set the current date automatically
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+        // JavaScript to link the input field to the greeting line
+        const recipientInput = document.getElementById('recipient-name');
+        const greetingName = document.getElementById('greeting-name');
+
+        recipientInput.addEventListener('input', (event) => {
+            greetingName.textContent = event.target.value;
+        });
+
+        // Set the initial greeting text
+        greetingName.textContent = recipientInput.value;
+    </script>
 </body>
 </html>
